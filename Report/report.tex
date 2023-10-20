@@ -1,0 +1,28 @@
+\documentclass{article}
+\usepackage{fancyhdr}
+\usepackage[margin=1in]{geometry}
+\usepackage{svg}
+
+\pagestyle{fancy}
+\lhead{Pravin Ramana}
+\rhead{CS3341 Foundations of Modern Computing Fall 2023}
+\renewcommand{\headrulewidth}{0pt}
+
+\begin{document}
+\section*{FlowScript DSL and JobSystem Integration Report}
+	\subsection{Job System FFI}
+		\subsubsection{FFI Communication}
+			The FFI utilized by the JobSystem offers communication via JSON objects. The system sends and recieves C-String pointers with data serialized as a JSON. Deserialization then occurs within the JobSystem.
+		\subsubsection{JobSystem FFI Features}
+			\begin{enumerate}
+				\item The ability for other languages to query Job 'handles,' which are descriptors containing information about Job status and allow the calling program to block and wait for jobs to complete, similar to a traditional OS thread handle.
+				\item The ability for multiple JobSystems to be created and operated on
+				\item Closure-based interface, which allows registerable jobs to adhere to one constraint, which is to consume a JSON and return a JSON.
+			\end{enumerate}
+	\subsection{FlowScript Design}
+		\subsubsection{Design Goal}
+			Create a minimal data-oriented language
+		\subsection{Language Features}
+			\subsubsection{Process execution}
+				Processes are executed in a similar fashion to shellscript, where a list of processes are chained together and driven to completion. An example of creating a chain of new process to parse compiler output from a make target, which is provided a target \texttt{test}, and stored into a JSON object named \texttt{makeoutput}: \texttt{\{"target" : "test"\} -> [make] -> [clangparse] -> [contextadd] -> parsed\_output\{\}}. Processes expect an input and an output. The inputs may be raw JSON literals or output from other processes
+\end{document}
