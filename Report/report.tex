@@ -24,5 +24,84 @@
 			Create a minimal data-oriented language
 		\subsection{Language Features}
 			\subsubsection{Process execution}
-				Processes are executed in a similar fashion to shellscript, where a list of processes are chained together and driven to completion. An example of creating a chain of new process to parse compiler output from a make target, which is provided a target \texttt{test}, and stored into a JSON object named \texttt{makeoutput}: \texttt{\{"target" : "test"\} -> [make] -> [clangparse] -> [contextadd] -> parsed\_output\{\}}. Processes expect an input and an output. The inputs may be raw JSON literals or output from other processes
+				Processes are executed in a similar fashion to shellscript, where a list of processes are chained together and driven to completion. An example of creating a chain of new process to parse compiler output from a make target, which is provided a target \texttt{test}, and stored into a JSON object named \texttt{output}. Processes expect an input and an output. 
+				
+				The inputs may be raw JSON literals or output from other processes (either directly or as a saved variable). Similarly, for outputs, they may be directed to another process or to a (lazily initialized) variable name. Note that each job will run sequentially in order of dependence. The translation of the following FlowScript would be:
+					\begin{verbatim}
+						digraph {
+						    {
+						        node [shape=ellipse]
+						        maketarget [data="{\"target\" : \"test\"}"]
+						        output
+						    }
+
+						    {
+						        node [shape=box]
+						        make
+						        clangparse
+						        contextadd
+						    }
+
+						    maketarget -> make -> clangparse -> contextadd -> output
+						}
+					\end{verbatim}
+				As shown above, ellipses will be JSON data types that may be defined before or during program execution. Boxes correspond to functions that may be applied by the JobSystem. It is a requirement that each function must have both a source and sink.
+			\subsection{Conditional Jumping}
+				The language implements conditional jumping using triangles. They can be thought of as meta-jobs. Conditional jumps will take a JSON object containing 2 fields, a "result", which maps to an integer that decides the branch to take, as well as "data", which is mapped to another JSON object and send to the Process in the chosen branch. Example JSON: \texttt{\{"result" : 0, "data":  null\}}. Conditionals may jump to any point in the execution graph. Sample flowscript, which implements conditionals:
+					\begin{verbatim}
+						digraph {
+						    {
+						        node [shape=ellipse]
+						        maketarget [data="{\"target\" : \"test\"}"]
+						        success_output
+						        error_output
+						    }
+
+						    {
+						        node [shape=box]
+						        make
+						        clangparse
+						        contextadd
+						    }
+
+						    {
+						        node [shape=triangle]
+						        makestatus 
+						        parsestatus
+						        contextstatus
+						    }
+
+						    maketarget -> make
+
+						    make -> makestatus
+						    makestatus -> {error_output, clangparse}
+    
+						    clangparse -> parsestatus
+						    parsestatus -> {error_output, contextadd}
+
+						    contextadd -> contextstatus
+						    contextstatus -> {error_output, success_output}
+						}
+					\end{verbatim}
+				Additionally, this behavior can allow the program to jump to previous points of execution, simulating a loop:
+					\begin{verbatim}
+						digraph {
+						    {
+						        node [shape=ellipse]
+						        n [label="n = 0"]
+						    }
+
+						    {
+						        node [shape=box]
+						        add_one
+						    }
+
+						    {
+						        node [shape=triangle]
+						        condition [label="while n < 10"]
+						    }
+
+						    n -> add_one -> condition -> {output, add_one}
+						}
+					\end{verbatim}
 \end{document}
