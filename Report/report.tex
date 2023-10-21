@@ -104,4 +104,32 @@
 						    n -> add_one -> condition -> {output, add_one}
 						}
 					\end{verbatim}
+			\subsection{Parallelism}
+				Parallelism is achieved in FlowScript via fork/join with trapezium/invtrapezium. Forking to achieve parallelism may be done both explicitly and implicitly. The fork command accepts a data array, which can then be directed to Processes. In the case where only a single process is directed from the work, each process is performed in parallel until it joined. When more than two Processes leave a fork, the data in each index of the data array gets passed to their corresponding job. Example of explicit parallelism:
+					\begin{verbatim}
+						digraph {
+						    {
+						        node [shape=ellipse]
+						        files
+						        output
+						    }
+
+						    {
+						        node [shape=box]
+						        compile_file
+						    }
+    
+						    {
+						        node [shape=trapezium]
+						        fork_compile
+						    }
+
+						    {
+						        node [shape=invtrapezium]
+						        join_compile
+						    }
+
+						    files -> fork_compile -> compile_file -> join_compile -> output
+						}
+					\end{verbatim}
 \end{document}
