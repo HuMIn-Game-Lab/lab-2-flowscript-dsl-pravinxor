@@ -22,7 +22,13 @@
 	\subsection{FlowScript Design}
 		\subsubsection{Design Goal}
 			Create a minimal data-oriented language
-		\subsection{Language Features}
+		\subsection{Syntax}
+			\subsubsection{Variables} JSON objects that are only defined during execution) begin with a user-defined name, followed by '{}'. Example: \texttt{foo\{\}}
+			\subsubsection{Execution Order and Data Passing} Data may be passed to/from \texttt{Process}es and variables using the \texttt{->} operator. The \texttt{->} assumes the sink is dependent on the source and execution will be order as such to ensure the source has fully completed before passing data to the sink.
+			\subsubsection{Conditional Statements} Based on a \texttt{Process}'s output, the flow of execution may be controlled with a condition statement. Condition statements can be invoked by applying \texttt{~} in front of a Process definition, for example: \texttt{~[Process]}. The JSON output of \texttt{Process} must be in the form \texttt{\{"result" : int, "value" : \{...\}\}}. \texttt{result} refers to the index of the branch that should be taken. Given the following FlowScript: \texttt{input{} -> ~[Process] -> (AnotherProcessA, AnotherProcessB)}. If the \texttt{result} key was 0, execution would branch to \texttt{AnotherProcessA}, if it was 1, execution would branch to \texttt{AnotherProcessB}. The JSON object within the \texttt{value} is then directly passed to the branched \texttt{Process}
+			\subsection{Parallelism with Fork/Join} Similar to forking on UNIX, fork copies states into separate processes, joining them when they finish. A \texttt{fork} may be performed with the \texttt{<} operator. The forked section will only be completed with a join, with the \texttt{>} operator. An example of this usage for processing in parallel: \texttt{files{} -> <(FileProcessor)> -> outputs}. The fork accepts an array of values and each individual value is passed a separate forked \texttt{Process}. Additionally, another variant of forking with multiple processes in the tuple (...) will use provide each individual index of the input JSON array to their corresponding \texttt{Process}: \texttt{\{[\{"file": \{...\}\}, \{"file": \{...\}\}]\} -> <(ProcessA, ProcessB)> -> outputs}.
+
+		\subsection{Translations from FlowScript to DOT}
 			\subsubsection{Process execution}
 				Processes are executed in a similar fashion to shellscript, where a list of processes are chained together and driven to completion. An example of creating a chain of new process to parse compiler output from a make target, which is provided a target \texttt{test}, and stored into a JSON object named \texttt{output}. Processes expect an input and an output. 
 				
@@ -105,7 +111,12 @@
 						}
 					\end{verbatim}
 			\subsection{Parallelism}
-				Parallelism is achieved in FlowScript via fork/join with trapezium/invtrapezium. Forking to achieve parallelism may be done both explicitly and implicitly. The fork command accepts a data array, which can then be directed to Processes. In the case where only a single process is directed from the work, each process is performed in parallel until it joined. When more than two Processes leave a fork, the data in each index of the data array gets passed to their corresponding job. Example of implicit parallelism:
+				Parallelism is achieved in FlowScript via fork/join with trapezium/invtrapezium. Forking to achieve parallelism may be done both explicitly and implicitly. The fork command accepts a data array, which can then be directed to Processes. In the case where only a single process is directed from the work, each process is performed in parallel until it joined. When more than two Processes leave a fork, the data in each index of the data array gets passed to their corresponding job. Example of implicit parallelism: \\
+					FlowScript:
+					\begin{verbatim}
+						{[{"file1": {}}, {"file2": {}}]} -> <fork -> [compile_file] -> join> -> output{}
+					\end{verbatim}
+					DOT Language:
 					\begin{verbatim}
 						digraph {
 						    {
@@ -132,7 +143,13 @@
 						    files -> fork_compile -> compile_file -> join_compile -> output
 						}
 					\end{verbatim}
-				An example of explicit parallelism:
+				An example of explicit parallelism: \\
+					FlowScript:
+					\begin{verbatim}
+						{[{"file1": {}}, {"file2": {}}]} -> <fork -> {[compile_file_1], [compile_file_2]} 
+							-> join> -> {output1{}, output2{}}
+					\end{verbatim}
+					DOT Language:
 					\begin{verbatim}
 						digraph {
 						    {
@@ -145,7 +162,8 @@
 
 						    {
 						        node [shape=box]
-						        compile_file
+						        compile_file_1
+						        compile_file_2
 						    }
     
 						    {
@@ -158,7 +176,7 @@
 						        join_compile
 						    }
 
-						    {file1, file2} -> fork_compile -> compile_file -> join_compile -> {output1, output2}
+						    {file1, file2} -> fork_compile -> {compile_file_1, compile_file_2} -> join_compile -> {output1, output2}
 						}
 					\end{verbatim}
 \end{document}
