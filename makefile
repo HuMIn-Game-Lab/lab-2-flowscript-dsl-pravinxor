@@ -1,2 +1,3 @@
-compile: 
-	clang++ -g -std=c++14 ./Code/*.cpp -o output
+compile:
+	git submodule update --init --recursive
+	cargo build --manifest-path Code/job_system/Cargo.toml
