@@ -25,8 +25,8 @@
 		\subsection{Syntax}
 			\subsubsection{Variables} JSON objects that are only defined during execution) begin with a user-defined name, followed by '{}'. Example: \texttt{foo\{\}}
 			\subsubsection{Execution Order and Data Passing} Data may be passed to/from \texttt{Process}es and variables using the \texttt{->} operator. The \texttt{->} assumes the sink is dependent on the source and execution will be order as such to ensure the source has fully completed before passing data to the sink.
-			\subsubsection{Conditional Statements} Based on a \texttt{Process}'s output, the flow of execution may be controlled with a condition statement. Condition statements can be invoked by applying \texttt{~} in front of a Process definition, for example: \texttt{~[Process]}. The JSON output of \texttt{Process} must be in the form \texttt{\{"result" : int, "value" : \{...\}\}}. \texttt{result} refers to the index of the branch that should be taken. Given the following FlowScript: \texttt{input{} -> ~[Process] -> (AnotherProcessA, AnotherProcessB)}. If the \texttt{result} key was 0, execution would branch to \texttt{AnotherProcessA}, if it was 1, execution would branch to \texttt{AnotherProcessB}. The JSON object within the \texttt{value} is then directly passed to the branched \texttt{Process}. Additionally, a branch can be pointed to with a \texttt{'} referring to an existing or future \texttt{Process}. An example of this would be: \texttt{\{"value": 1\} -> [AddOne]'a -> ~[isGreaterThan10] -> ('a, ReturnValue)}, which will repeatedly branch back to \texttt{AddOne}, until \texttt{isGreaterThan10} returns a \texttt{"result"} of 1.
-			\subsection{Parallelism with Fork/Join} Similar to forking on UNIX, fork copies states into separate processes, joining them when they finish. A \texttt{fork} may be performed with the \texttt{<} operator. The forked section will only be completed with a join, with the \texttt{>} operator. An example of this usage for processing in parallel: \texttt{files{} -> <(FileProcessor)> -> outputs}. The fork accepts an array of values and each individual value is passed a separate forked \texttt{Process}. Additionally, another variant of forking with multiple processes in the tuple (...) will use provide each individual index of the input JSON array to their corresponding \texttt{Process}: \texttt{\{[\{"file": \{...\}\}, \{"file": \{...\}\}]\} -> <(ProcessA, ProcessB)> -> outputs\{\}}.
+			\subsubsection{Conditional Statements} Based on a \texttt{Process}'s output, the flow of execution may be controlled with a condition statement. Condition statements can be invoked by applying \texttt{~} in front of a Process definition, for example: \texttt{~[Process]}. The JSON output of \texttt{Process} must be in the form \texttt{\{"result" : int, "value" : \{...\}\}}. \texttt{result} refers to the index of the branch that should be taken. Given the following FlowScript: \texttt{input{} -> ~[Process] -> ([AnotherProcessA], [AnotherProcessB])}. If the \texttt{result} key was 0, execution would branch to \texttt{AnotherProcessA}, if it was 1, execution would branch to \texttt{AnotherProcessB}. The JSON object within the \texttt{value} is then directly passed to the branched \texttt{Process}. Additionally, a branch can be pointed to with a \texttt{'} referring to an existing or future \texttt{Process}. An example of this would be: \texttt{\{"value": 1\} -> [AddOne]'a -> ~[isGreaterThan10] -> ('a, ReturnValue\{\})}, which will repeatedly branch back to \texttt{AddOne}, until \texttt{isGreaterThan10} returns a \texttt{"result"} of 1.
+			\subsection{Parallelism with Fork/Join} Similar to forking on UNIX, fork copies states into separate processes, joining them when they finish. A \texttt{fork} may be performed with the \texttt{<} operator. The forked section will only be completed with a join, with the \texttt{>} operator. An example of this usage for processing in parallel: \texttt{files{} -> <(FileProcessor)> -> outputs}. The fork accepts an array of values and each individual value is passed a separate forked \texttt{Process}. Additionally, another variant of forking with multiple processes in the tuple (...) will use provide each individual index of the input JSON array to their corresponding \texttt{Process}: \texttt{\{[\{"file": \{...\}\}, \{"file": \{...\}\}]\} -> <([ProcessA], [ProcessB])> -> outputs\{\}}.
 
 		\subsection{Translations from FlowScript to DOT}
 			\subsubsection{Process execution}
@@ -54,40 +54,32 @@
 				\end{enumerate}
 			\subsection{Conditional Jumping}
 				\begin{enumerate}
-					\item \textbf{FlowScript:} \texttt{\{"target": "test"\} -> maketarget -> {}} \\
+					\item \textbf{FlowScript:} \texttt{\{"target": "test"\} -> maketarget -> makestatus -> (error\_output\{\}, \\
+						clangparse -> parsestatus -> (error\_output\{\}, \\
+						contextadd -> contextstatus -> (error\_output\{\}, success\_output\{\}))} \\
 					\item \textbf{DOT Code:} \begin{verbatim}
-							digraph {
-							    {
-							        node [shape=ellipse]
-							        maketarget [data="{\"target\" : \"test\"}"]
-							        success_output
-							        error_output
-							    }
-
-							    {
-							        node [shape=box]
-							        make
-							        clangparse
-							        contextadd
-							    }
-
-							    {
-							        node [shape=triangle]
-							        makestatus 
-							        parsestatus
-							        contextstatus
-							    }
-
-							    maketarget -> make
-
-							    make -> makestatus
-							    makestatus -> {error_output, clangparse}
-    
-							    clangparse -> parsestatus
-							    parsestatus -> {error_output, contextadd}
-
-							    contextadd -> contextstatus
-							    contextstatus -> {error_output, success_output}
+						digraph {
+							{
+								node [shape=ellipse]
+								maketarget [data="{\"target\" : \"test\"}"]
+								success_output
+								error_output
+							}
+							{
+								node [shape=box]
+								make
+								clangparse
+								contextadd
+							}
+							{
+								node [shape=triangle]
+								makestatus 
+								parsestatus
+								contextstatus
+							}
+							maketarget -> make -> makestatus -> {error_output, clangparse}
+							clangparse -> parsestatus -> {error_output, contextadd}
+							contextadd -> contextstatus -> {error_output, success_output}
 							}
 						\end{verbatim}
 				\end{enumerate}
