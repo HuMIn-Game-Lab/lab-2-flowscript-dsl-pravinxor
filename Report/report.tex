@@ -25,91 +25,72 @@
 		\subsection{Syntax}
 			\subsubsection{Variables} JSON objects that are only defined during execution) begin with a user-defined name, followed by '{}'. Example: \texttt{foo\{\}}
 			\subsubsection{Execution Order and Data Passing} Data may be passed to/from \texttt{Process}es and variables using the \texttt{->} operator. The \texttt{->} assumes the sink is dependent on the source and execution will be order as such to ensure the source has fully completed before passing data to the sink.
-			\subsubsection{Conditional Statements} Based on a \texttt{Process}'s output, the flow of execution may be controlled with a condition statement. Condition statements can be invoked by applying \texttt{~} in front of a Process definition, for example: \texttt{~[Process]}. The JSON output of \texttt{Process} must be in the form \texttt{\{"result" : int, "value" : \{...\}\}}. \texttt{result} refers to the index of the branch that should be taken. Given the following FlowScript: \texttt{input{} -> ~[Process] -> (AnotherProcessA, AnotherProcessB)}. If the \texttt{result} key was 0, execution would branch to \texttt{AnotherProcessA}, if it was 1, execution would branch to \texttt{AnotherProcessB}. The JSON object within the \texttt{value} is then directly passed to the branched \texttt{Process}
-			\subsection{Parallelism with Fork/Join} Similar to forking on UNIX, fork copies states into separate processes, joining them when they finish. A \texttt{fork} may be performed with the \texttt{<} operator. The forked section will only be completed with a join, with the \texttt{>} operator. An example of this usage for processing in parallel: \texttt{files{} -> <(FileProcessor)> -> outputs}. The fork accepts an array of values and each individual value is passed a separate forked \texttt{Process}. Additionally, another variant of forking with multiple processes in the tuple (...) will use provide each individual index of the input JSON array to their corresponding \texttt{Process}: \texttt{\{[\{"file": \{...\}\}, \{"file": \{...\}\}]\} -> <(ProcessA, ProcessB)> -> outputs}.
+			\subsubsection{Conditional Statements} Based on a \texttt{Process}'s output, the flow of execution may be controlled with a condition statement. Condition statements can be invoked by applying \texttt{~} in front of a Process definition, for example: \texttt{~[Process]}. The JSON output of \texttt{Process} must be in the form \texttt{\{"result" : int, "value" : \{...\}\}}. \texttt{result} refers to the index of the branch that should be taken. Given the following FlowScript: \texttt{input{} -> ~[Process] -> (AnotherProcessA, AnotherProcessB)}. If the \texttt{result} key was 0, execution would branch to \texttt{AnotherProcessA}, if it was 1, execution would branch to \texttt{AnotherProcessB}. The JSON object within the \texttt{value} is then directly passed to the branched \texttt{Process}. Additionally, a branch can be pointed to with a \texttt{'} referring to an existing or future \texttt{Process}. An example of this would be: \texttt{\{"value": 1\} -> [AddOne]'a -> ~[isGreaterThan10] -> ('a, ReturnValue)}, which will repeatedly branch back to \texttt{AddOne}, until \texttt{isGreaterThan10} returns a \texttt{"result"} of 1.
+			\subsection{Parallelism with Fork/Join} Similar to forking on UNIX, fork copies states into separate processes, joining them when they finish. A \texttt{fork} may be performed with the \texttt{<} operator. The forked section will only be completed with a join, with the \texttt{>} operator. An example of this usage for processing in parallel: \texttt{files{} -> <(FileProcessor)> -> outputs}. The fork accepts an array of values and each individual value is passed a separate forked \texttt{Process}. Additionally, another variant of forking with multiple processes in the tuple (...) will use provide each individual index of the input JSON array to their corresponding \texttt{Process}: \texttt{\{[\{"file": \{...\}\}, \{"file": \{...\}\}]\} -> <(ProcessA, ProcessB)> -> outputs\{\}}.
 
 		\subsection{Translations from FlowScript to DOT}
 			\subsubsection{Process execution}
-				Processes are executed in a similar fashion to shellscript, where a list of processes are chained together and driven to completion. An example of creating a chain of new process to parse compiler output from a make target, which is provided a target \texttt{test}, and stored into a JSON object named \texttt{output}. Processes expect an input and an output. 
-				
-				The inputs may be raw JSON literals or output from other processes (either directly or as a saved variable). Similarly, for outputs, they may be directed to another process or to a (lazily initialized) variable name. Note that each job will run sequentially in order of dependence. The translation of the following FlowScript would be:
-					\begin{verbatim}
-						digraph {
-						    {
-						        node [shape=ellipse]
-						        maketarget [data="{\"target\" : \"test\"}"]
-						        output
-						    }
+				\begin{enumerate}
+					\item \textbf{FlowScript:} \texttt{\{"target" : "test"\} -> make -> clangparse -> contextadd -> output\{\}} \\
+					\item \textbf{DOT Code:}
+						\begin{verbatim}
+							digraph {
+							    {
+							        node [shape=ellipse]
+							        maketarget [data="{\"target\" : \"test\"}"]
+							        output
+							    }
 
-						    {
-						        node [shape=box]
-						        make
-						        clangparse
-						        contextadd
-						    }
+							    {
+							        node [shape=box]
+							        make
+							        clangparse
+							        contextadd
+							    }
 
-						    maketarget -> make -> clangparse -> contextadd -> output
-						}
-					\end{verbatim}
-				As shown above, ellipses will be JSON data types that may be defined before or during program execution. Boxes correspond to functions that may be applied by the JobSystem. It is a requirement that each function must have both a source and sink.
+							    maketarget -> make -> clangparse -> contextadd -> output
+							}
+						\end{verbatim}
+				\end{enumerate}
 			\subsection{Conditional Jumping}
-				The language implements conditional jumping using triangles. They can be thought of as meta-jobs. Conditional jumps will take a JSON object containing 2 fields, a "result", which maps to an integer that decides the branch to take, as well as "data", which is mapped to another JSON object and send to the Process in the chosen branch. Example JSON: \texttt{\{"result" : 0, "data":  null\}}. Conditionals may jump to any point in the execution graph. Sample flowscript, which implements conditionals:
-					\begin{verbatim}
-						digraph {
-						    {
-						        node [shape=ellipse]
-						        maketarget [data="{\"target\" : \"test\"}"]
-						        success_output
-						        error_output
-						    }
+				\begin{enumerate}
+					\item \textbf{FlowScript:} \texttt{\{"target": "test"\} -> maketarget -> {}} \\
+					\item \textbf{DOT Code:} \begin{verbatim}
+							digraph {
+							    {
+							        node [shape=ellipse]
+							        maketarget [data="{\"target\" : \"test\"}"]
+							        success_output
+							        error_output
+							    }
 
-						    {
-						        node [shape=box]
-						        make
-						        clangparse
-						        contextadd
-						    }
+							    {
+							        node [shape=box]
+							        make
+							        clangparse
+							        contextadd
+							    }
 
-						    {
-						        node [shape=triangle]
-						        makestatus 
-						        parsestatus
-						        contextstatus
-						    }
+							    {
+							        node [shape=triangle]
+							        makestatus 
+							        parsestatus
+							        contextstatus
+							    }
 
-						    maketarget -> make
+							    maketarget -> make
 
-						    make -> makestatus
-						    makestatus -> {error_output, clangparse}
+							    make -> makestatus
+							    makestatus -> {error_output, clangparse}
     
-						    clangparse -> parsestatus
-						    parsestatus -> {error_output, contextadd}
+							    clangparse -> parsestatus
+							    parsestatus -> {error_output, contextadd}
 
-						    contextadd -> contextstatus
-						    contextstatus -> {error_output, success_output}
-						}
-					\end{verbatim}
-				Additionally, this behavior can allow the program to jump to previous points of execution, simulating a loop:
-					\begin{verbatim}
-						digraph {
-						    {
-						        node [shape=ellipse]
-						        n [label="n = 0"]
-						    }
-
-						    {
-						        node [shape=box]
-						        add_one
-						    }
-
-						    {
-						        node [shape=triangle]
-						        condition [label="while n < 10"]
-						    }
-
-						    n -> add_one -> condition -> {output, add_one}
-						}
-					\end{verbatim}
+							    contextadd -> contextstatus
+							    contextstatus -> {error_output, success_output}
+							}
+						\end{verbatim}
+				\end{enumerate}
 			\subsection{Parallelism}
 				Parallelism is achieved in FlowScript via fork/join with trapezium/invtrapezium. Forking to achieve parallelism may be done both explicitly and implicitly. The fork command accepts a data array, which can then be directed to Processes. In the case where only a single process is directed from the work, each process is performed in parallel until it joined. When more than two Processes leave a fork, the data in each index of the data array gets passed to their corresponding job. Example of implicit parallelism: \\
 					FlowScript:
