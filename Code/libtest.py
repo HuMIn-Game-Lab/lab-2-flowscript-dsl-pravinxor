@@ -6,6 +6,7 @@ import json
 lib = cdll.LoadLibrary('./Code/job_system/target/debug/libjobsystem.so')
 
 lib.create_jobsystem.restype = POINTER(c_char)
+lib.destroy_jobsystem.restype = POINTER(c_char)
 lib.add_worker.restype = POINTER(c_char)
 lib.get_job.restype = POINTER(c_char)
 lib.get_job_status.restype = POINTER(c_char)
@@ -23,6 +24,10 @@ def call_ffi(func, payload=None):
 
 def create_jobsystem():
     return call_ffi(lib.create_jobsystem)
+
+def destroy_jobsystem(system_id):
+    payload = json.dumps({"system_id": system_id})
+    return call_ffi(lib.destroy_jobsystem, payload)
 
 def add_worker(system_id):
     payload = json.dumps({"system_id": system_id})
@@ -61,3 +66,5 @@ if __name__ == '__main__':
     status_info = get_job(job_info['handle_id'])
     print(f"Job Result: {status_info}\n")
 
+    destroy_status = add_worker(system_info['system_id'])
+    print(f"Destroy jobsystem: {destroy_status}")
