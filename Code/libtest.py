@@ -8,6 +8,7 @@ lib = cdll.LoadLibrary('./Code/job_system/target/debug/libjobsystem.so')
 lib.create_jobsystem.restype = POINTER(c_char)
 lib.add_worker.restype = POINTER(c_char)
 lib.get_job.restype = POINTER(c_char)
+lib.get_job_status.restype = POINTER(c_char)
 lib.send_job.restype = POINTER(c_char)
 
 def call_ffi(func, payload=None):
@@ -35,6 +36,10 @@ def send_job(system_id, job_type, input_data=None):
     })
     return call_ffi(lib.send_job, payload)
 
+def get_job_status(handle_id):
+    payload = json.dumps({"handle_id": handle_id})
+    return call_ffi(lib.get_job_status, payload)
+
 def get_job(handle_id):
     payload = json.dumps({"handle_id": handle_id})
     return call_ffi(lib.get_job, payload)
@@ -42,14 +47,17 @@ def get_job(handle_id):
 # Usage example
 if __name__ == '__main__':
     system_info = create_jobsystem()
-    print(f"Created JobSystem: {system_info}")
+    print(f"Created JobSystem: {system_info}\n")
 
     worker_info = add_worker(system_info['system_id'])
-    print(f"Added Worker: {worker_info}")
+    print(f"Added Worker: {worker_info}\n")
 
     job_info = send_job(system_info['system_id'], 'make', {'target': 'demo'})
-    print(f"Sent Job: {job_info}")
+    print(f"Sent Job: {job_info}\n")
+    
+    status_info = get_job_status(job_info['handle_id'])
+    print(f"Job Status: {status_info}\n")
 
-    result_info = get_job(job_info['handle_id'])
-    print(f"Job Result: {result_info}")
+    status_info = get_job(job_info['handle_id'])
+    print(f"Job Result: {status_info}\n")
 
