@@ -47,7 +47,7 @@ if __name__ == '__main__':
     worker_info = add_worker(system_info['system_id'])
     print(f"Added Worker: {worker_info}")
 
-    job_info = send_job(system_info['system_id'], 'make', {'target': 'test'})
+    job_info = send_job(system_info['system_id'], 'make', {'target': 'demo'})
     print(f"Sent Job: {job_info}")
 
     result_info = get_job(job_info['handle_id'])
