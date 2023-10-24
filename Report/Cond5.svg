@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="156pt" height="332pt" viewBox="0.00 0.00 155.61 332.00">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 328)">
+<title>%0</title>
+<polygon fill="#ffffff" stroke="transparent" points="-4,4 -4,-328 151.6052,-328 151.6052,4 -4,4"/>
+<!-- vals -->
+<g id="node1" class="node">
+<title>vals</title>
+<ellipse fill="none" stroke="#000000" cx="76.9979" cy="-306" rx="27" ry="18"/>
+<text text-anchor="middle" x="76.9979" y="-301.8" font-family="Times,serif" font-size="14.00" fill="#000000">vals</text>
+</g>
+<!-- fork_ops -->
+<g id="node5" class="node">
+<title>fork_ops</title>
+<polygon fill="none" stroke="#000000" points="114.5556,-252 39.4402,-252 12.6886,-216 141.3072,-216 114.5556,-252"/>
+<text text-anchor="middle" x="76.9979" y="-229.8" font-family="Times,serif" font-size="14.00" fill="#000000">fork_ops</text>
+</g>
+<!-- vals&#45;&gt;fork_ops -->
+<g id="edge1" class="edge">
+<title>vals-&gt;fork_ops</title>
+<path fill="none" stroke="#000000" d="M76.9979,-287.8314C76.9979,-280.131 76.9979,-270.9743 76.9979,-262.4166"/>
+<polygon fill="#000000" stroke="#000000" points="80.498,-262.4132 76.9979,-252.4133 73.498,-262.4133 80.498,-262.4132"/>
+</g>
+<!-- divide_op -->
+<g id="node2" class="node">
+<title>divide_op</title>
+<polygon fill="none" stroke="#000000" points="71.9937,-180 .0021,-180 .0021,-144 71.9937,-144 71.9937,-180"/>
+<text text-anchor="middle" x="35.9979" y="-157.8" font-family="Times,serif" font-size="14.00" fill="#000000">divide_op</text>
+</g>
+<!-- join_ops -->
+<g id="node6" class="node">
+<title>join_ops</title>
+<polygon fill="none" stroke="#000000" points="40.3189,-72 113.6769,-72 139.8026,-108 14.1932,-108 40.3189,-72"/>
+<text text-anchor="middle" x="76.9979" y="-85.8" font-family="Times,serif" font-size="14.00" fill="#000000">join_ops</text>
+</g>
+<!-- divide_op&#45;&gt;join_ops -->
+<g id="edge4" class="edge">
+<title>divide_op-&gt;join_ops</title>
+<path fill="none" stroke="#000000" d="M46.3439,-143.8314C50.9216,-135.7925 56.4031,-126.1666 61.4567,-117.2918"/>
+<polygon fill="#000000" stroke="#000000" points="64.6056,-118.8351 66.5126,-108.4133 58.5227,-115.3712 64.6056,-118.8351"/>
+</g>
+<!-- add_op -->
+<g id="node3" class="node">
+<title>add_op</title>
+<polygon fill="none" stroke="#000000" points="147.7129,-180 90.2829,-180 90.2829,-144 147.7129,-144 147.7129,-180"/>
+<text text-anchor="middle" x="118.9979" y="-157.8" font-family="Times,serif" font-size="14.00" fill="#000000">add_op</text>
+</g>
+<!-- add_op&#45;&gt;join_ops -->
+<g id="edge5" class="edge">
+<title>add_op-&gt;join_ops</title>
+<path fill="none" stroke="#000000" d="M108.3995,-143.8314C103.7102,-135.7925 98.0951,-126.1666 92.9181,-117.2918"/>
+<polygon fill="#000000" stroke="#000000" points="95.801,-115.2875 87.739,-108.4133 89.7545,-118.8146 95.801,-115.2875"/>
+</g>
+<!-- print -->
+<g id="node4" class="node">
+<title>print</title>
+<polygon fill="none" stroke="#000000" points="103.9979,-36 49.9979,-36 49.9979,0 103.9979,0 103.9979,-36"/>
+<text text-anchor="middle" x="76.9979" y="-13.8" font-family="Times,serif" font-size="14.00" fill="#000000">print</text>
+</g>
+<!-- fork_ops&#45;&gt;divide_op -->
+<g id="edge2" class="edge">
+<title>fork_ops-&gt;divide_op</title>
+<path fill="none" stroke="#000000" d="M66.6519,-215.8314C62.0742,-207.7925 56.5927,-198.1666 51.5391,-189.2918"/>
+<polygon fill="#000000" stroke="#000000" points="54.4731,-187.3712 46.4832,-180.4133 48.3902,-190.8351 54.4731,-187.3712"/>
+</g>
+<!-- fork_ops&#45;&gt;add_op -->
+<g id="edge3" class="edge">
+<title>fork_ops-&gt;add_op</title>
+<path fill="none" stroke="#000000" d="M87.5963,-215.8314C92.2856,-207.7925 97.9007,-198.1666 103.0777,-189.2918"/>
+<polygon fill="#000000" stroke="#000000" points="106.2413,-190.8146 108.2568,-180.4133 100.1948,-187.2875 106.2413,-190.8146"/>
+</g>
+<!-- join_ops&#45;&gt;print -->
+<g id="edge6" class="edge">
+<title>join_ops-&gt;print</title>
+<path fill="none" stroke="#000000" d="M76.9979,-71.8314C76.9979,-64.131 76.9979,-54.9743 76.9979,-46.4166"/>
+<polygon fill="#000000" stroke="#000000" points="80.498,-46.4132 76.9979,-36.4133 73.498,-46.4133 80.498,-46.4132"/>
+</g>
+</g>
+</svg>

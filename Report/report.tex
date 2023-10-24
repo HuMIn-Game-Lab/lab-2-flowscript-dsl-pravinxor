@@ -2,6 +2,7 @@
 \usepackage{fancyhdr}
 \usepackage[margin=1in]{geometry}
 \usepackage{svg}
+\usepackage{graphicx}
 
 \pagestyle{fancy}
 \lhead{Pravin Ramana}
@@ -23,135 +24,139 @@
 		\subsubsection{Design Goal}
 			Create a minimal data-oriented language
 		\subsection{Syntax}
-			\subsubsection{Variables} JSON objects that are only defined during execution) begin with a user-defined name, followed by '{}'. Example: \texttt{foo\{\}}
-			\subsubsection{Execution Order and Data Passing} Data may be passed to/from \texttt{Process}es and variables using the \texttt{->} operator. The \texttt{->} assumes the sink is dependent on the source and execution will be order as such to ensure the source has fully completed before passing data to the sink.
-			\subsubsection{Conditional Statements} Based on a \texttt{Process}'s output, the flow of execution may be controlled with a condition statement. Condition statements can be invoked by applying \texttt{~} in front of a Process definition, for example: \texttt{~[Process]}. The JSON output of \texttt{Process} must be in the form \texttt{\{"result" : int, "value" : \{...\}\}}. \texttt{result} refers to the index of the branch that should be taken. Given the following FlowScript: \texttt{input{} -> ~[Process] -> ([AnotherProcessA], [AnotherProcessB])}. If the \texttt{result} key was 0, execution would branch to \texttt{AnotherProcessA}, if it was 1, execution would branch to \texttt{AnotherProcessB}. The JSON object within the \texttt{value} is then directly passed to the branched \texttt{Process}. Additionally, a branch can be pointed to with a \texttt{'} referring to an existing or future \texttt{Process}. An example of this would be: \texttt{\{"value": 1\} -> [AddOne]'a -> ~[isGreaterThan10] -> ('a, ReturnValue\{\})}, which will repeatedly branch back to \texttt{AddOne}, until \texttt{isGreaterThan10} returns a \texttt{"result"} of 1.
-			\subsection{Parallelism with Fork/Join} Similar to forking on UNIX, fork copies states into separate processes, joining them when they finish. A \texttt{fork} may be performed with the \texttt{<} operator. The forked section will only be completed with a join, with the \texttt{>} operator. An example of this usage for processing in parallel: \texttt{files{} -> <(FileProcessor)> -> outputs}. The fork accepts an array of values and each individual value is passed a separate forked \texttt{Process}. Additionally, another variant of forking with multiple processes in the tuple (...) will use provide each individual index of the input JSON array to their corresponding \texttt{Process}: \texttt{\{[\{"file": \{...\}\}, \{"file": \{...\}\}]\} -> <([ProcessA], [ProcessB])> -> outputs\{\}}.
+			\subsubsection{Variables} Variables are defined using the default ellipse shape in the DOT language. For variables with static data, such as JSON constants, the "data" attribute may be added, containing the specified JSON constant. Additionally, boxes define process and will be named in the same manner that they are registered in the JobSystem. An example of that would be: \\
+			\begin{minipage}{0.5\textwidth}
+				\begin{verbatim}
+				digraph {
+				    {
+				        node [shape=ellipse]
+				        maketarget [data="{\"target\" : \"test\"}"]
+				    }
+				    {
+				        node [shape=box]
+				        make
+				    }
+				}
+				\end{verbatim}
+			\end{minipage}
+			\begin{minipage}{0.5\textwidth}
+				\centering
+				\includesvg[inkscapelatex=false, width=0.25\textheight]{Cond1}
+			\end{minipage}
 
-		\subsection{Translations from FlowScript to DOT}
-			\subsubsection{Process execution}
-				\begin{enumerate}
-					\item \textbf{FlowScript:} \texttt{\{"target" : "test"\} -> make -> clangparse -> contextadd -> output\{\}} \\
-					\item \textbf{DOT Code:}
-						\begin{verbatim}
-							digraph {
-							    {
-							        node [shape=ellipse]
-							        maketarget [data="{\"target\" : \"test\"}"]
-							        output
-							    }
+			\subsubsection{Execution Order and Data Passing} Data may be passed to/from \texttt{Process}es and variables using the \texttt{->} operator. The \texttt{->} assumes the sink is dependent on the source and execution will be order as such to ensure the source has fully completed before passing data to the sink. An example of that would be: \\
+			\begin{minipage}{0.5\textwidth}
+				\begin{verbatim}
+				digraph {
+				    {
+				        node [shape=ellipse]
+				        maketarget [data="{\"target\" : \"test\"}"]
+				    }
+				    {
+				        node [shape=box]
+				        make
+						clangparse
+				    }
+				    maketarget -> make -> clangparse
+				}
+				\end{verbatim}
+			\end{minipage}
+			\begin{minipage}{0.5\textwidth}
+				\centering
+				\includesvg[inkscapelatex=false, height=0.25\textheight]{Cond2}
+			\end{minipage}
+			
+			\subsubsection{Conditional Statements} Based on a \texttt{Process}'s output, the flow of execution may be controlled with a condition statement. Condition statements can be invoked by applying inserting triangle nodes. Conditionals are similar to branches in Assembly programming and may be used to implement loops or if-branching. An example which incorporates both would be: \\
+			\begin{minipage}{0.5\textwidth}
+				\begin{verbatim}
+				digraph {
+				    {
+				        node [shape=ellipse]
+				        n [data="{\"value\" : \"0\"}"]
+				    }
+				    {
+				        node [shape=box]
+				        add_one
+				        print
+				    }
+				    {
+				        node [shape=triangle]
+				        is_greater_than_10
+				    }
 
-							    {
-							        node [shape=box]
-							        make
-							        clangparse
-							        contextadd
-							    }
+				    is_greater_than_10 -> {print; add_one}
+				    add_one -> n
 
-							    maketarget -> make -> clangparse -> contextadd -> output
-							}
-						\end{verbatim}
-				\end{enumerate}
-			\subsection{Conditional Jumping}
-				\begin{enumerate}
-					\item \textbf{FlowScript:} \texttt{\{"target": "test"\} -> maketarget -> makestatus -> (error\_output\{\}, \\
-						clangparse -> parsestatus -> (error\_output\{\}, \\
-						contextadd -> contextstatus -> (error\_output\{\}, success\_output\{\}))} \\
-					\item \textbf{DOT Code:} \begin{verbatim}
-						digraph {
-							{
-								node [shape=ellipse]
-								maketarget [data="{\"target\" : \"test\"}"]
-								success_output
-								error_output
-							}
-							{
-								node [shape=box]
-								make
-								clangparse
-								contextadd
-							}
-							{
-								node [shape=triangle]
-								makestatus 
-								parsestatus
-								contextstatus
-							}
-							maketarget -> make -> makestatus -> {error_output, clangparse}
-							clangparse -> parsestatus -> {error_output, contextadd}
-							contextadd -> contextstatus -> {error_output, success_output}
-							}
-						\end{verbatim}
-				\end{enumerate}
-			\subsection{Parallelism}
-				Example of implicit parallelism: \\
-					FlowScript:
-					\begin{verbatim}
-						{[{"file1": {}}, {"file2": {}}]} -> <fork -> [compile_file] -> join> -> output{}
-					\end{verbatim}
-					DOT Language:
-					\begin{verbatim}
-						digraph {
-						    {
-						        node [shape=ellipse]
-						        files
-						        output
-						    }
+				    n -> is_greater_than_10
+				}
+				\end{verbatim}
+			\end{minipage}
+			\begin{minipage}{0.5\textwidth}
+				\centering
+				\includesvg[inkscapelatex=false, height=0.25\textheight]{Cond3}
+			\end{minipage}
 
-						    {
-						        node [shape=box]
-						        compile_file
-						    }
-    
-						    {
-						        node [shape=trapezium]
-						        fork_compile
-						    }
+			\subsection{Parallelism with Fork/Join} Similar to forking on UNIX, fork copies states into separate processes, joining them when they finish. A \texttt{fork} may be performed with the trapezium object, while \texttt{join}ing can be performed with the invtrapezium object. The forked section will only end until it is rejoined. It is invalid to fork without joining. Additionally, the fork operator expects a "values" array. Joining will return the same values array with the mapping done by each Process in the fork. There are 2 variants to forking. One variant, which operates in a data-independent way, where the same processes are called on an array of data. There is also forking in a data dependent manner, where FlowScript code can define which data goes to which branch of the fork. Here is an example of forking in a data independent manner: \\
+			\begin{minipage}{0.5\textwidth}
+				\begin{verbatim}
+				digraph {
+				    {
+				        node [shape=ellipse]
+				        vals [data="{\"values\" : [0, 0, 1, 1, 2, 2]"]
+				    }
+				    {
+				        node [shape=box]
+				        add_one
+				        print
+				    }
+				    {
+				        node [shape=trapezium]
+				        fork_add
+				    }
+				    {
+				        node [shape=invtrapezium]
+				        join_add
+				    }
 
-						    {
-						        node [shape=invtrapezium]
-						        join_compile
-						    }
+				    vals -> fork_add -> add_one -> join_add -> print
+				}
+				\end{verbatim}
+			\end{minipage}
+			\begin{minipage}{0.5\textwidth}
+				\centering
+				\includesvg[inkscapelatex=false, height=0.25\textheight]{Cond4}
+			\end{minipage} \\ 
+			Here is forking in the data dependent manner. Note that this version will send data to each branch based on the index of the data in the values array and the index of the branch.
 
-						    files -> fork_compile -> compile_file -> join_compile -> output
-						}
-					\end{verbatim}
-				An example of explicit parallelism: \\
-					FlowScript:
-					\begin{verbatim}
-						{[{"file1": {}}, {"file2": {}}]} -> <fork -> {[compile_file_1], [compile_file_2]} 
-							-> join> -> {output1{}, output2{}}
-					\end{verbatim}
-					DOT Language:
-					\begin{verbatim}
-						digraph {
-						    {
-						        node [shape=ellipse]
-						        file1
-						        file2
-						        output1
-						        output2
-						    }
+			\begin{minipage}{0.5\textwidth}
+				\begin{verbatim}
+				digraph {
+				    {
+				        node [shape=ellipse]
+				        vals [data="{\"values\" : [{\"dividethis\": 5}, {\"addthis\": 4}]"]
+				    }
+				    {
+				        node [shape=box]
+				        divide_op
+				        add_op
+				        print
+				    }
+				    {
+				        node [shape=trapezium]
+				        fork_ops
+				    }
+				    {
+				        node [shape=invtrapezium]
+				        join_ops
+				    }
 
-						    {
-						        node [shape=box]
-						        compile_file_1
-						        compile_file_2
-						    }
-    
-						    {
-						        node [shape=trapezium]
-						        fork_compile
-						    }
-
-						    {
-						        node [shape=invtrapezium]
-						        join_compile
-						    }
-
-						    {file1, file2} -> fork_compile ->
-								{compile_file_1, compile_file_2} ->
-								join_compile -> {output1, output2}
-						}
-					\end{verbatim}
+				    vals -> fork_ops -> {divide_op; add_op} -> join_ops -> print
+				}
+				\end{verbatim}
+			\end{minipage}
+			\begin{minipage}{0.5\textwidth}
+				\centering
+				\includesvg[inkscapelatex=false, height=0.25\textheight]{Cond5}
+			\end{minipage}
+			
 \end{document}
