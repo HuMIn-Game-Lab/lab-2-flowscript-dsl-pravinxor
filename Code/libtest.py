@@ -11,6 +11,7 @@ lib.add_worker.restype = POINTER(c_char)
 lib.get_job.restype = POINTER(c_char)
 lib.get_job_status.restype = POINTER(c_char)
 lib.send_job.restype = POINTER(c_char)
+lib.list_job_types = POINTER(c_char)
 
 def call_ffi(func, payload=None):
     print(f"Calling FFI function: {func.__name__}...")
@@ -41,6 +42,9 @@ def send_job(system_id, job_type, input_data=None):
     })
     return call_ffi(lib.send_job, payload)
 
+def list_job_types():
+    return call_ffi(lib.list_job_types)
+
 def get_job_status(handle_id):
     payload = json.dumps({"handle_id": handle_id})
     return call_ffi(lib.get_job_status, payload)
@@ -54,6 +58,9 @@ if __name__ == '__main__':
     system_info = create_jobsystem()
     print(f"Created JobSystem: {system_info}\n")
 
+    types = list_job_types()
+    print(f"Job types {types}")
+    
     worker_info = add_worker(system_info['system_id'])
     print(f"Added Worker: {worker_info}\n")
 
