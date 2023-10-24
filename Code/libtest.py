@@ -11,7 +11,7 @@ lib.add_worker.restype = POINTER(c_char)
 lib.get_job.restype = POINTER(c_char)
 lib.get_job_status.restype = POINTER(c_char)
 lib.send_job.restype = POINTER(c_char)
-lib.list_job_types = POINTER(c_char)
+lib.list_job_types.restype = POINTER(c_char)
 
 def call_ffi(func, payload=None):
     print(f"Calling FFI function: {func.__name__}...")
